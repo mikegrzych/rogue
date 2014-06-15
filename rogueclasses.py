@@ -27,11 +27,12 @@ class Object:
         self.x += dx;
         self.y += dy;
 
-    def draw(self, console):
+    def draw(self, console, fov_map):
       """Draws the Object's character and color to the specified console.
       """
-      libtcod.console_set_default_foreground(console, self.color)
-      libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
+      if libtcod.map_is_in_fov(fov_map, self.x, self.y):
+        libtcod.console_set_default_foreground(console, self.color)
+        libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def clear(self, console):
       """Erases the Object's character from the specified console.
@@ -42,6 +43,7 @@ class Tile:
   # A tile on the map, has properties and attributes
   def __init__(self, blocks, blocks_sight = None):
     self.blocks = blocks
+    self.explored = False
 
     # By default, a tile that blocks also blocks_sight
     if blocks_sight is None:

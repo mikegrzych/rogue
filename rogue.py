@@ -19,8 +19,8 @@ libtcod.sys_set_fps(LIMIT_FPS)
 
 # Initialize player information
 player = Object(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, PLAYER_SYMBOL, PLAYER_COLOR)
-npc = Object(SCREEN_WIDTH/2 - 5, SCREEN_HEIGHT/2, '@', libtcod.yellow)
-objects = [npc, player]
+#npc = Object(SCREEN_WIDTH/2 - 5, SCREEN_HEIGHT/2, '@', libtcod.yellow)
+objects = [player]
 
 # Map Info
 ZONE_WIDTH = 80
@@ -28,8 +28,15 @@ ZONE_HEIGHT = 45
 ROOM_MAX_SIZE = 10
 ROOM_MIN_SIZE = 6
 MAX_ROOMS = 30
+
+# Game Settings
+FOV_ALGO = libtcod.FOV_BASIC
+FOV_LIGHT_WALLS = True
+TORCH_RADIUS = 4
 color_dark_wall = libtcod.Color(0, 0, 100)
+color_light_wall = libtcod.Color(130, 110, 50)
 color_dark_ground = libtcod.Color(50, 50, 150)
+color_light_ground = libtcod.Color(200, 180, 50)
 
 # Helper Funcs
 
@@ -39,6 +46,8 @@ def handle_keys():
   UP/DOWN/LEFT/RIGHT keys will move the player in their respective directions. Fullscreen mode is toggled with LAlt+ENTER; Game exit is triggered with ESCAPE.
   """
   global player
+  global zone
+  global fov_recompute
 
   # Fullscreen and Exit keys;
   # Use "True" arg for turn-based; omit for real-time
@@ -51,12 +60,28 @@ def handle_keys():
   # Movement Keys
   if libtcod.console_is_key_pressed(libtcod.KEY_UP):
     player.move(zone, 0, -1)
+    fov_recompute = True
   elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
     player.move(zone, 0, 1)
+    fov_recompute = True
   elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
     player.move(zone, -1, 0)
+    fov_recompute = True
   elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
     player.move(zone, 1, 0)
+    fov_recompute = True
+
+def make_fov_map():
+  global zone
+  global fov_recompute
+  global fov_map
+
+  fov_recompute = True
+  fov_map = libtcod.map_new(ZONE_WIDTH, ZONE_HEIGHT)
+
+  for y in range(ZONE_HEIGHT):
+    for x in range(ZONE_WIDTH):
+      libtcod.map_set_properties(fov_map, x, y, not zone[x][y].blocks_sight, not zone[x][y].blocks)
 
 def make_zone():
   global zone
@@ -98,6 +123,8 @@ def make_zone():
       rooms.append(new_room)
       num_rooms += 1
 
+  # Generate the lighting map
+
 def create_room(room):
   """Creates walkable space in the shape of a room.
 
@@ -123,23 +150,45 @@ def create_v_tunnel(y1, y2, x):
     zone[x][y].blocks_sight = False
 
 def render_all():
-  global color_light_wall
-  global color_light_ground
+  global objects
+  global zone
+  global fov_map
+  global fov_recompute
+
+  # Recompute the FoV map if necessary
+  if fov_recompute:
+    fov_recompute = False
+    libtcod.map_compute_fov(fov_map, player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO)
+
   # Draws all Objects in the list
   for obj in objects:
-    obj.draw(game_console)
+    obj.draw(game_console, fov_map)
 
   for y in range(ZONE_HEIGHT):
     for x in range(ZONE_WIDTH):
+      visible = libtcod.map_is_in_fov(fov_map, x, y)
       wall = zone[x][y].blocks_sight
-      if wall:
-        libtcod.console_set_char_background(game_console, x, y, \
-                                            color_dark_wall, \
-                                            libtcod.BKGND_SET)
+      if visible:
+        if wall:
+          libtcod.console_set_char_background(game_console, x, y, \
+                                              color_light_wall, \
+                                              libtcod.BKGND_SET)
+        else:
+          libtcod.console_set_char_background(game_console, x, y, \
+                                              color_light_ground, \
+                                              libtcod.BKGND_SET)
+        zone[x][y].explored = True
       else:
-        libtcod.console_set_char_background(game_console, x, y, \
-                                            color_dark_ground, \
-                                            libtcod.BKGND_SET)
+        # Even if not currently visible, player may see this space if it has already been explored
+        if zone[x][y].explored:
+          if wall:
+            libtcod.console_set_char_background(game_console, x, y, \
+                                                color_dark_wall, \
+                                                libtcod.BKGND_SET)
+          else:
+            libtcod.console_set_char_background(game_console, x, y, \
+                                                color_dark_ground, \
+                                                libtcod.BKGND_SET)
   #  Flush console and push changes to screen
   libtcod.console_blit(game_console, 0, 0, \
                       SCREEN_WIDTH, SCREEN_HEIGHT, \
@@ -164,4 +213,5 @@ def game_loop():
 
 if __name__ == "__main__":
   make_zone()
+  make_fov_map()
   game_loop()
