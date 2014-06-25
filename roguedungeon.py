@@ -86,11 +86,13 @@ def place_objects(room, max_monsters, objects):
     # Choose random spot for monster
     x = libtcod.random_get_int(0, room.x1, room.x2)
     y = libtcod.random_get_int(0, room.y1, room.y2)
-
-    if libtcod.random_get_int(0, 0, 100) < 80:  #80% Chance of Orc
-      # Create an Orc
-      monster = classes.Object(x, y, 'o', libtcod.desaturated_green)
-    else:
-      #create a Troll
-      monster = classes.Object(x, y, 'T', libtcod.darker_green)
-    objects.append(monster)
+    
+    # Only place if the location isn't blocked
+    if not is_blocked(room, objects, x, y):
+      if libtcod.random_get_int(0, 0, 100) < 80:  #80% Chance of Orc
+        # Create an Orc
+        monster = classes.Object("Orc", x, y, 'o', libtcod.desaturated_green)
+      else:
+        #create a Troll
+        monster = classes.Object("Troll", x, y, 'T', libtcod.darker_green)
+      objects.append(monster)

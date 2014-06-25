@@ -8,22 +8,24 @@ class Object:
     #   Items
     #   etc...
     # An Object is always represented by a character on the screen.
-    def __init__(self, x, y, char, color):
+    def __init__(self, name, x, y, char, color, blocks=False):
       """Initialization procedure for an Object.
 
-      Initializes Object with specified x,y position, displayed character, and color.
+      Initializes Object with specified name, x-y position, displayed character, color, and blocking status.
       """
+      self.name = name
+      self.blocks = blocks
       self.x = x
       self.y = y
       self.char = char
       self.color = color
 
-    def move(self, zone, dx, dy):
+    def move(self, state, dx, dy):
       """Move the object according to a provided distance vector (dx, dy).
 
       Modifies x and y attributes.
       """
-      if not zone[self.x + dx][self.y + dy].blocks:
+      if not is_blocked(state, self.x + dx, self.y + dy):
         self.x += dx;
         self.y += dy;
 

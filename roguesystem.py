@@ -5,13 +5,43 @@ import rogueclasses as classes
 GAME_CONSOLE = libtcod.console_new(settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT)
 
 # Initialize PLAYER and world information
-PLAYER = classes.Object(settings.SCREEN_WIDTH/2, settings.SCREEN_HEIGHT/2, settings.PLAYER_SYMBOL, settings.PLAYER_COLOR)
+PLAYER = classes.Object("Hero", settings.SCREEN_WIDTH/2, settings.SCREEN_HEIGHT/2, settings.PLAYER_SYMBOL, settings.PLAYER_COLOR)
+PLAYER_ACTION = None
+GAME_STATUS = 'playing'
 #npc = Object(SCREEN_WIDTH/2 - 5, SCREEN_HEIGHT/2, '@', libtcod.yellow)
 OBJECTS = [PLAYER]
 ZONE = None
 FOV_MAP = None
 FOV_RECOMPUTE = None
-GAME_STATE = { "console":GAME_CONSOLE, "player":PLAYER, "objs":OBJECTS, "current_zone":ZONE, "fov_map":FOV_MAP, "fov_recomp":FOV_RECOMPUTE }
+GAME_STATE = { "console":GAME_CONSOLE, "player":PLAYER, "action":PLAYER_ACTION, "status":GAME_STATUS, "objs":OBJECTS, "current_zone":ZONE, "fov_map":FOV_MAP, "fov_recomp":FOV_RECOMPUTE }
+
+def is_blocked(state, x, y):
+  """Checks to see if a provided space in the zone is blocked. Takes the current game state and chosen x-y coordinates as arguments.
+
+  Modifies nothing. Returns True if the coordinate is blocked, and False otherwise.
+  """
+  if state["zone"][x][y].blocks is True:
+    return True
+
+  for obj in state["objs"]:
+    if obj.blocks is True and obj.x == x and obj.y == y:
+      return True
+
+  return False
+
+def is_blocked(zone, objects, x, y):
+  """Checks to see if a provided space in the zone is blocked. Takes the current zone, objects list, and chosen x-y coordinates as arguments.
+
+  Modifies nothing. Returns True if the coordinate is blocked, and False otherwise.
+  """
+  if zone[x][y].blocks is True:
+    return True
+
+  for obj in objects:
+    if obj.blocks is True and obj.x == x and obj.y == y:
+      return True
+
+  return False
 
 def handle_keys(state):
   """Handles key inputs from the PLAYER.
@@ -26,22 +56,26 @@ def handle_keys(state):
   key = libtcod.console_check_for_keypress(True)
   if key.vk == libtcod.KEY_ENTER and key.lalt:
     libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
+    return 'no_action'
   elif key.vk == libtcod.KEY_ESCAPE:
-    return True
+    return 'exit'  # Exit game
 
-  # Movement Keys
-  if libtcod.console_is_key_pressed(libtcod.KEY_UP):
-    state["player"].move(state["current_zone"], 0, -1)
-    state["fov_recomp"] = True
-  elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
-    state["player"].move(state["current_zone"], 0, 1)
-    state["fov_recomp"] = True
-  elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
-    state["player"].move(state["current_zone"], -1, 0)
-    state["fov_recomp"] = True
-  elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
-    state["player"].move(state["current_zone"], 1, 0)
-    state["fov_recomp"] = True
+  if state["status"] == 'playing':
+    # Movement Keys
+    if libtcod.console_is_key_pressed(libtcod.KEY_UP):
+      state["player"].move(state, 0, -1)
+      state["fov_recomp"] = True
+    elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
+      state["player"].move(state, 0, 1)
+      state["fov_recomp"] = True
+    elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
+      state["player"].move(state, -1, 0)
+      state["fov_recomp"] = True
+    elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
+      state["player"].move(state, 1, 0)
+      state["fov_recomp"] = True
+    else:
+      return 'no_action'
 
 def make_fov_map(zone):
 
@@ -109,6 +143,6 @@ def game_loop(state):
     for obj in state["objs"]:
       obj.clear(state["console"])
 
-    exit = handle_keys(state)
-    if exit:
+    state["action"] = handle_keys(state)
+    if state["action"] == 'exit':
       break
