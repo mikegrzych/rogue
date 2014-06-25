@@ -1,17 +1,19 @@
 import libtcodpy as libtcod
 import roguesettings as settings
 import rogueclasses as classes
+import copy
 
 
-def make_zone(zone_properties):
+def make_zone(zone_properties, objects_in):
   """Creates a dungeon zone.
 
-  Takes a dictionary zone_properties as an argument, which contains information for zone height (int), zone width (int), minimum room size (int), maximum room size (int), and maximum number of rooms (int) as arguments.
+  Takes a dictionary zone_properties as an argument, which contains information for zone height (int), zone width (int), minimum room size (int), maximum room size (int), maximum number of rooms (int), and a list of Objects as a second argument.
 
-  Returns a tuple of the form (player_pos_x, player_pos_y, zone)
+  Returns a tuple of the form (player_pos_x, player_pos_y, zone, objects_out)
   """
   rooms = []
   num_rooms = 0
+  objects_out = copy.deepcopy(objects_in)
 
   # Fill zone with "unblocked" tiles
   zone = [[ classes.Tile(True)
@@ -31,6 +33,7 @@ def make_zone(zone_properties):
         break
     if not intersects:
       create_room(zone, new_room)
+      place_objects(new_room, zone_properties["r_mons_max"], objects_out)
       (new_x, new_y) = new_room.center()
       if num_rooms == 0:
         player_x = new_x
@@ -47,7 +50,7 @@ def make_zone(zone_properties):
           create_h_tunnel(zone, prev_x, new_x, new_y)
       rooms.append(new_room)
       num_rooms += 1
-  return (player_x, player_y, zone)
+  return (player_x, player_y, zone, objects_out)
 
 def create_room(zone, room):
   """Creates walkable space in the shape of a room.
@@ -69,3 +72,24 @@ def create_v_tunnel(zone, y1, y2, x):
   for y in range(min(y1, y2), max(y1, y2) + 1):
     zone[x][y].blocks = False
     zone[x][y].blocks_sight = False
+
+def place_objects(room, max_monsters, objects):
+  """Places a random number n monsters (0 < n < max_monsters) in the provided room, appending them to objects.
+
+  Modifies objects. Returns nothing.
+  """
+  # Choose a random number of monsters
+  num_monsters = libtcod.random_get_int(0, 0, max_monsters )
+
+  for i in range(num_monsters):
+    # Choose random spot for monster
+    x = libtcod.random_get_int(0, room.x1, room.x2)
+    y = libtcod.random_get_int(0, room.y1, room.y2)
+
+    if libtcod.random_get_int(0, 0, 100) < 80:  #80% Chance of Orc
+      # Create an Orc
+      monster = Object(x, y, 'o', libtcod.desaturated_green)
+    else:
+      #create a Troll
+      monster = Object(x, y, 'T', libtcod.darker_green)
+    objects.append(monster)

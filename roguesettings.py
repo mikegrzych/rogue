@@ -13,7 +13,8 @@ ZONE_HEIGHT = 45
 ROOM_MAX_SIZE = 10
 ROOM_MIN_SIZE = 6
 MAX_ROOMS = 30
-ZONE_PROPERTIES = { "width":ZONE_WIDTH, "height":ZONE_HEIGHT, "r_min":ROOM_MIN_SIZE, "r_max":ROOM_MAX_SIZE, "r_num_max":MAX_ROOMS }
+MAX_ROOM_MONSTERS = 3
+ZONE_PROPERTIES = { "width":ZONE_WIDTH, "height":ZONE_HEIGHT, "r_min":ROOM_MIN_SIZE, "r_max":ROOM_MAX_SIZE, "r_num_max":MAX_ROOMS, "r_mons_max":MAX_ROOM_MONSTERS }
 
 # Game Settings
 FOV_ALGO = libtcod.FOV_BASIC
