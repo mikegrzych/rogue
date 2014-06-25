@@ -1,4 +1,19 @@
 import libtcodpy as libtcod
+
+def is_blocked(zone, objects, x, y):
+  """Checks to see if a provided space in the zone is blocked. Takes the current zone, objects list, and chosen x-y coordinates as arguments.
+
+  Modifies nothing. Returns True if the coordinate is blocked, and False otherwise.
+  """
+  if zone[x][y].blocks is True:
+    return True
+
+  for obj in objects:
+    if obj.blocks is True and obj.x == x and obj.y == y:
+      return True
+
+  return False
+
 class Object:
     # Generic Object class;
     # Can be used to represent any object in game world, such as:
@@ -25,7 +40,7 @@ class Object:
 
       Modifies x and y attributes.
       """
-      if not is_blocked(state, self.x + dx, self.y + dy):
+      if not is_blocked(state["current_zone"], state["objs"], self.x + dx, self.y + dy):
         self.x += dx;
         self.y += dy;
 

@@ -15,33 +15,24 @@ FOV_MAP = None
 FOV_RECOMPUTE = None
 GAME_STATE = { "console":GAME_CONSOLE, "player":PLAYER, "action":PLAYER_ACTION, "status":GAME_STATUS, "objs":OBJECTS, "current_zone":ZONE, "fov_map":FOV_MAP, "fov_recomp":FOV_RECOMPUTE }
 
-def is_blocked(state, x, y):
-  """Checks to see if a provided space in the zone is blocked. Takes the current game state and chosen x-y coordinates as arguments.
+def player_move_or_attack(state, dx, dy):
+  # Coordinate the player is moving to or attacking
+  x = state["player"].x + dx
+  y = state["player"].y + dy
 
-  Modifies nothing. Returns True if the coordinate is blocked, and False otherwise.
-  """
-  if state["zone"][x][y].blocks is True:
-    return True
-
+  # Try to find an attackable object
+  target = None
   for obj in state["objs"]:
-    if obj.blocks is True and obj.x == x and obj.y == y:
-      return True
+    if obj.x == x and obj.y == y:
+      target = obj
+      break
 
-  return False
-
-def is_blocked(zone, objects, x, y):
-  """Checks to see if a provided space in the zone is blocked. Takes the current zone, objects list, and chosen x-y coordinates as arguments.
-
-  Modifies nothing. Returns True if the coordinate is blocked, and False otherwise.
-  """
-  if zone[x][y].blocks is True:
-    return True
-
-  for obj in objects:
-    if obj.blocks is True and obj.x == x and obj.y == y:
-      return True
-
-  return False
+  # Attack if there's a viable target, otherwise move
+  if target is not None:
+    print 'The ' + target.name + ' laughs at the puny efforts to attack him!'
+  else:
+    state["player"].move(state, dx, dy)
+    state["fov_recomp"] = True
 
 def handle_keys(state):
   """Handles key inputs from the PLAYER.
@@ -63,17 +54,13 @@ def handle_keys(state):
   if state["status"] == 'playing':
     # Movement Keys
     if libtcod.console_is_key_pressed(libtcod.KEY_UP):
-      state["player"].move(state, 0, -1)
-      state["fov_recomp"] = True
+      player_move_or_attack(state, 0, -1)
     elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
-      state["player"].move(state, 0, 1)
-      state["fov_recomp"] = True
+      player_move_or_attack(state, 0, 1)
     elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
-      state["player"].move(state, -1, 0)
-      state["fov_recomp"] = True
+      player_move_or_attack(state, -1, 0)
     elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
-      state["player"].move(state, 1, 0)
-      state["fov_recomp"] = True
+      player_move_or_attack(state, 1, 0)
     else:
       return 'no_action'
 
@@ -146,3 +133,8 @@ def game_loop(state):
     state["action"] = handle_keys(state)
     if state["action"] == 'exit':
       break
+
+    if state["status"] == 'playing' and state["action"] != 'no_action':
+      for obj in state["objs"]:
+        if obj != state["player"]:
+          print 'The ' + obj.name + ' growls!'

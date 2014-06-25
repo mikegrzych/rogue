@@ -4,6 +4,7 @@ import rogueclasses as classes
 import copy
 
 
+
 def make_zone(zone_properties, objects_in):
   """Creates a dungeon zone.
 
@@ -34,7 +35,7 @@ def make_zone(zone_properties, objects_in):
     if not intersects:
       create_room(zone, new_room)
       # Add objects to room (monsters, chests, etc)
-      place_objects(new_room, zone_properties["r_mons_max"], objects_out)
+      place_objects(zone, new_room, zone_properties["r_mons_max"], objects_out)
       (new_x, new_y) = new_room.center()
       if num_rooms == 0:
         player_x = new_x
@@ -74,7 +75,7 @@ def create_v_tunnel(zone, y1, y2, x):
     zone[x][y].blocks = False
     zone[x][y].blocks_sight = False
 
-def place_objects(room, max_monsters, objects):
+def place_objects(zone, room, max_monsters, objects):
   """Places a random number n monsters (0 < n < max_monsters) in the provided room, appending them to objects.
 
   Modifies objects. Returns nothing.
@@ -86,9 +87,9 @@ def place_objects(room, max_monsters, objects):
     # Choose random spot for monster
     x = libtcod.random_get_int(0, room.x1, room.x2)
     y = libtcod.random_get_int(0, room.y1, room.y2)
-    
+
     # Only place if the location isn't blocked
-    if not is_blocked(room, objects, x, y):
+    if not classes.is_blocked(zone, objects, x, y):
       if libtcod.random_get_int(0, 0, 100) < 80:  #80% Chance of Orc
         # Create an Orc
         monster = classes.Object("Orc", x, y, 'o', libtcod.desaturated_green)
