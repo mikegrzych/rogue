@@ -13,7 +13,7 @@ def make_zone(zone_properties, objects_in):
   """
   rooms = []
   num_rooms = 0
-  objects_out = copy.deepcopy(objects_in)
+  objects_out = copy.copy(objects_in)
 
   # Fill zone with "unblocked" tiles
   zone = [[ classes.Tile(True)
@@ -33,6 +33,7 @@ def make_zone(zone_properties, objects_in):
         break
     if not intersects:
       create_room(zone, new_room)
+      # Add objects to room (monsters, chests, etc)
       place_objects(new_room, zone_properties["r_mons_max"], objects_out)
       (new_x, new_y) = new_room.center()
       if num_rooms == 0:
@@ -88,8 +89,8 @@ def place_objects(room, max_monsters, objects):
 
     if libtcod.random_get_int(0, 0, 100) < 80:  #80% Chance of Orc
       # Create an Orc
-      monster = Object(x, y, 'o', libtcod.desaturated_green)
+      monster = classes.Object(x, y, 'o', libtcod.desaturated_green)
     else:
       #create a Troll
-      monster = Object(x, y, 'T', libtcod.darker_green)
+      monster = classes.Object(x, y, 'T', libtcod.darker_green)
     objects.append(monster)
