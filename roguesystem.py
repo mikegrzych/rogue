@@ -5,7 +5,11 @@ import rogueclasses as classes
 GAME_CONSOLE = libtcod.console_new(settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT)
 
 # Initialize PLAYER and world information
-PLAYER = classes.Object("Hero", settings.SCREEN_WIDTH/2, settings.SCREEN_HEIGHT/2, settings.PLAYER_SYMBOL, settings.PLAYER_COLOR)
+# Kind of messy right now, will eventually need refactoring to be cleaner
+# and minimize pollution of module namespace
+
+PLAYER = classes.Object("Hero", settings.SCREEN_WIDTH/2, settings.SCREEN_HEIGHT/2, settings.PLAYER_SYMBOL, settings.PLAYER_COLOR, fighter=classes.Fighter(hp=30, defense=2, power=5))
+
 PLAYER_ACTION = None
 GAME_STATUS = 'playing'
 #npc = Object(SCREEN_WIDTH/2 - 5, SCREEN_HEIGHT/2, '@', libtcod.yellow)
@@ -136,5 +140,5 @@ def game_loop(state):
 
     if state["status"] == 'playing' and state["action"] != 'no_action':
       for obj in state["objs"]:
-        if obj != state["player"]:
-          print 'The ' + obj.name + ' growls!'
+        if obj.ai:
+          obj.ai.take_turn(state)

@@ -92,8 +92,12 @@ def place_objects(zone, room, max_monsters, objects):
     if not classes.is_blocked(zone, objects, x, y):
       if libtcod.random_get_int(0, 0, 100) < 80:  #80% Chance of Orc
         # Create an Orc
-        monster = classes.Object("Orc", x, y, 'o', libtcod.desaturated_green)
+        fighter_comp = classes.Fighter(hp=10, defense=0, power=3)
+        ai_comp = classes.MonsterBasic()
+        monster = classes.Object("Orc", x, y, 'o', libtcod.desaturated_green, fighter=fighter_comp, ai=ai_comp)
       else:
         #create a Troll
-        monster = classes.Object("Troll", x, y, 'T', libtcod.darker_green)
+        fighter_comp = classes.Fighter(hp=16, defense=1, power=4)
+        ai_comp = classes.MonsterBasic()
+        monster = classes.Object("Troll", x, y, 'T', libtcod.darker_green, fighter=fighter_comp, ai=ai_comp)
       objects.append(monster)

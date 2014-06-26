@@ -1,4 +1,5 @@
 import libtcodpy as libtcod
+import math
 
 def is_blocked(zone, objects, x, y):
   """Checks to see if a provided space in the zone is blocked. Takes the current zone, objects list, and chosen x-y coordinates as arguments.
@@ -23,7 +24,7 @@ class Object:
     #   Items
     #   etc...
     # An Object is always represented by a character on the screen.
-    def __init__(self, name, x, y, char, color, blocks=False):
+    def __init__(self, name, x, y, char, color, blocks=False, fighter=None, ai=None):
       """Initialization procedure for an Object.
 
       Initializes Object with specified name, x-y position, displayed character, color, and blocking status.
@@ -34,6 +35,13 @@ class Object:
       self.y = y
       self.char = char
       self.color = color
+      self.fighter = fighter
+      if self.fighter:
+        self.fighter.owner = self
+
+      self.ai = ai
+      if self.ai:
+        self.ai.owner = self
 
     def move(self, state, dx, dy):
       """Move the object according to a provided distance vector (dx, dy).
@@ -43,6 +51,26 @@ class Object:
       if not is_blocked(state["current_zone"], state["objs"], self.x + dx, self.y + dy):
         self.x += dx;
         self.y += dy;
+
+    def move_toward(self, state, target_x, target_y):
+      dx = target_x - self.x
+      dy = target_y - self.y
+      distance = math.sqrt(dx ** 2 + dy ** 2)
+
+      # Normalize to a unit vector, round, and convert to int,
+      # thereby restricting movement to map grid
+      dx = int(round(dx / distance))
+      dy = int(round(dy / distance))
+      self.move(state, dx, dy)
+
+    def distance_to(self, other):
+      """Determine the distance between this Object and other.
+
+      Returns a float.
+      """
+      dx = other.x - self.x
+      dy = other.y - self.y
+      return math.sqrt(dx ** 2 + dy ** 2)
 
     def draw(self, console, fov_map):
       """Draws the Object's character and color to the specified console.
@@ -85,3 +113,29 @@ class Rect:
     # Returns True if Rect self intersects with Rect other
     return (self.x1 <= other.x2 and self.x2 >= other.x1 and \
             self.y1 <= other.y2 and self.y2 >= other.y1)
+
+class Fighter:
+  # Combat-related properties and methods
+  # For:
+  #  - Player
+  #  - Monsters
+  #  - NPCs
+  def __init__(self, hp, defense, power):
+    self.max_hp = hp
+    self.cur_hp = hp
+    self.defense = defense
+    self.power = power
+
+class MonsterBasic:
+  # Basic AI component
+  # For:
+  #  - Monsters
+  def take_turn(self, state):
+    monster = self.owner
+    if libtcod.map_is_in_fov(state["fov_map"], monster.x, monster.y):
+      if monster.distance_to(state["player"]) >= 2:
+        # Move toward the player if far away
+        monster.move_toward(state, state["player"].x, state["player"].y)
+      elif state["player"].fighter.cur_hp > 0:
+        # Attack the player if player is adjacent and alive
+        print 'The attack of the ' + monster.name + ' bounces off your shiny metal armor!'
