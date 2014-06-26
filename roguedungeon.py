@@ -1,6 +1,7 @@
 import libtcodpy as libtcod
 import roguesettings as settings
 import rogueclasses as classes
+from functools import partial
 import copy
 
 
@@ -92,12 +93,24 @@ def place_objects(zone, room, max_monsters, objects):
     if not classes.is_blocked(zone, objects, x, y):
       if libtcod.random_get_int(0, 0, 100) < 80:  #80% Chance of Orc
         # Create an Orc
-        fighter_comp = classes.Fighter(hp=10, defense=0, power=3)
+        fighter_comp = classes.Fighter(hp=10, defense=0, power=3, death_func=partial(monster_death, obj_list=objects))
         ai_comp = classes.MonsterBasic()
         monster = classes.Object("Orc", x, y, 'o', libtcod.desaturated_green, fighter=fighter_comp, ai=ai_comp)
       else:
         #create a Troll
-        fighter_comp = classes.Fighter(hp=16, defense=1, power=4)
+        fighter_comp = classes.Fighter(hp=16, defense=1, power=4, death_func=partial(monster_death, obj_list=objects))
         ai_comp = classes.MonsterBasic()
         monster = classes.Object("Troll", x, y, 'T', libtcod.darker_green, fighter=fighter_comp, ai=ai_comp)
       objects.append(monster)
+
+def monster_death(monster, obj_list):
+  # Monster has died, and turns into a non-blocking, non-attacking,
+  # non-moving corpse
+  print monster.name.capitalize() + ' is dead!'
+  monster.char = '%'
+  monster.color = libtcod.dark_red
+  monster.blocks = False
+  monster.fighter = None
+  monster.ai = None
+  monster.name = 'remains of ' + monster.name
+  monster.move_to_front(obj_list)

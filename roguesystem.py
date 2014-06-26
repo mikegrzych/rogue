@@ -2,22 +2,14 @@ import libtcodpy as libtcod
 import roguesettings as settings
 import rogueclasses as classes
 
-GAME_CONSOLE = libtcod.console_new(settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT)
+def player_death(player):
+  # The player has died, and the game ends
+  print 'You died!'
+  GAME_STATE["status"] = 'dead'
 
-# Initialize PLAYER and world information
-# Kind of messy right now, will eventually need refactoring to be cleaner
-# and minimize pollution of module namespace
-
-PLAYER = classes.Object("Hero", settings.SCREEN_WIDTH/2, settings.SCREEN_HEIGHT/2, settings.PLAYER_SYMBOL, settings.PLAYER_COLOR, fighter=classes.Fighter(hp=30, defense=2, power=5))
-
-PLAYER_ACTION = None
-GAME_STATUS = 'playing'
-#npc = Object(SCREEN_WIDTH/2 - 5, SCREEN_HEIGHT/2, '@', libtcod.yellow)
-OBJECTS = [PLAYER]
-ZONE = None
-FOV_MAP = None
-FOV_RECOMPUTE = None
-GAME_STATE = { "console":GAME_CONSOLE, "player":PLAYER, "action":PLAYER_ACTION, "status":GAME_STATUS, "objs":OBJECTS, "current_zone":ZONE, "fov_map":FOV_MAP, "fov_recomp":FOV_RECOMPUTE }
+  # Transform the player into a corpse
+  player.char = '%'
+  player.color = libtcod.dark_red
 
 def player_move_or_attack(state, dx, dy):
   # Coordinate the player is moving to or attacking
@@ -27,13 +19,13 @@ def player_move_or_attack(state, dx, dy):
   # Try to find an attackable object
   target = None
   for obj in state["objs"]:
-    if obj.x == x and obj.y == y:
+    if obj.fighter and obj.x == x and obj.y == y:
       target = obj
       break
 
   # Attack if there's a viable target, otherwise move
   if target is not None:
-    print 'The ' + target.name + ' laughs at the puny efforts to attack him!'
+    state["player"].fighter.attack(target)
   else:
     state["player"].move(state, dx, dy)
     state["fov_recomp"] = True
@@ -88,7 +80,9 @@ def render_all(state):
 
   # Draws all Objects in the list
   for obj in state["objs"]:
-    obj.draw(GAME_CONSOLE, state["fov_map"])
+    if obj != state["player"]:
+      obj.draw(state["console"], state["fov_map"])
+  state["player"].draw(state["console"], state["fov_map"])
 
   for x in range(len(state["current_zone"])):
     for y in range(len(state["current_zone"][0])):
@@ -119,6 +113,12 @@ def render_all(state):
   libtcod.console_blit(state["console"], 0, 0, \
                       settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT, \
                       0, 0, 0)
+  # Show the player's stats
+  libtcod.console_set_default_foreground(state["console"], libtcod.white)
+  libtcod.console_print_ex(0, 1, settings.SCREEN_HEIGHT - 2, \
+                            libtcod.BKGND_NONE, libtcod.LEFT, \
+                            'HP: ' + str(state["player"].fighter.cur_hp) + \
+                             '/' + str(state["player"].fighter.max_hp))
 
 # Main game loop
 #  If real-time, each loop iteration is a frame;
@@ -142,3 +142,20 @@ def game_loop(state):
       for obj in state["objs"]:
         if obj.ai:
           obj.ai.take_turn(state)
+
+GAME_CONSOLE = libtcod.console_new(settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT)
+
+# Initialize PLAYER and world information
+# Kind of messy right now, will eventually need refactoring to be cleaner
+# and minimize pollution of module namespace
+
+PLAYER = classes.Object("Hero", settings.SCREEN_WIDTH/2, settings.SCREEN_HEIGHT/2, settings.PLAYER_SYMBOL, settings.PLAYER_COLOR, fighter=classes.Fighter(hp=30, defense=2, power=5, death_func=player_death))
+
+PLAYER_ACTION = None
+GAME_STATUS = 'playing'
+#npc = Object(SCREEN_WIDTH/2 - 5, SCREEN_HEIGHT/2, '@', libtcod.yellow)
+OBJECTS = [PLAYER]
+ZONE = None
+FOV_MAP = None
+FOV_RECOMPUTE = None
+GAME_STATE = { "console":GAME_CONSOLE, "player":PLAYER, "action":PLAYER_ACTION, "status":GAME_STATUS, "objs":OBJECTS, "current_zone":ZONE, "fov_map":FOV_MAP, "fov_recomp":FOV_RECOMPUTE }

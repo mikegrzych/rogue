@@ -79,6 +79,14 @@ class Object:
         libtcod.console_set_default_foreground(console, self.color)
         libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
+    def move_to_front(self, object_list):
+      """Moves this Object to the front of the object_list, assuming Object is an element of object_list.
+
+      Modifies object_list.
+      """
+      object_list.remove(self)
+      object_list.insert(0, self)
+
     def clear(self, console):
       """Erases the Object's character from the specified console.
       """
@@ -120,11 +128,31 @@ class Fighter:
   #  - Player
   #  - Monsters
   #  - NPCs
-  def __init__(self, hp, defense, power):
+  def __init__(self, hp, defense, power, death_func=None):
     self.max_hp = hp
     self.cur_hp = hp
     self.defense = defense
     self.power = power
+    self.death_func = death_func
+
+  def take_damage(self, damage):
+    # Apply damage if possible
+    if damage > 0:
+      self.cur_hp -= damage
+    if self.cur_hp <= 0:
+      func = self.death_func
+      if func is not None:
+        func(self.owner)
+
+  def attack(self, target):
+    damage = self.power - target.fighter.defense
+
+    if damage > 0:
+      # Make the target take some damage
+      print self.owner.name.capitalize() + ' attacks ' + target.name + ' for ' + str(damage) + ' hit points.'
+      target.fighter.take_damage(damage)
+    else:
+      print self.owner.name.capitalize() + ' attacks ' + target.name + ' but it has no effect!'
 
 class MonsterBasic:
   # Basic AI component
@@ -138,4 +166,4 @@ class MonsterBasic:
         monster.move_toward(state, state["player"].x, state["player"].y)
       elif state["player"].fighter.cur_hp > 0:
         # Attack the player if player is adjacent and alive
-        print 'The attack of the ' + monster.name + ' bounces off your shiny metal armor!'
+        monster.fighter.attack(state["player"])
