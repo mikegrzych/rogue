@@ -40,10 +40,12 @@ def handle_keys(state):
 
   # Fullscreen and Exit keys;
   # Use "True" arg for turn-based; omit for real-time
-  key = libtcod.console_check_for_keypress(True)
+  if settings.TURN_BASED is True:
+    key = libtcod.console_wait_for_keypress(True)
+  else:
+    key = libtcod.console_check_for_keypress()
   if key.vk == libtcod.KEY_ENTER and key.lalt:
     libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
-    return 'no_action'
   elif key.vk == libtcod.KEY_ESCAPE:
     return 'exit'  # Exit game
 
@@ -58,6 +60,7 @@ def handle_keys(state):
     elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
       player_move_or_attack(state, 1, 0)
     else:
+      print 'Hero takes no action'
       return 'no_action'
 
 def make_fov_map(zone):
@@ -138,7 +141,7 @@ def game_loop(state):
     if state["action"] == 'exit':
       break
 
-    if state["status"] == 'playing' and state["action"] != 'no_action':
+    if state["status"] == 'playing' and (state["action"] != 'no_action' or settings.TURN_BASED is False):
       for obj in state["objs"]:
         if obj.ai:
           obj.ai.take_turn(state)

@@ -5,7 +5,8 @@ PLAYER_SYMBOL = '@'
 PLAYER_COLOR = libtcod.white
 SCREEN_WIDTH = 80
 SCREEN_HEIGHT = 50
-LIMIT_FPS = 15
+LIMIT_FPS = 5
+TURN_BASED = False
 
 # Map Info
 ZONE_WIDTH = 80
@@ -19,7 +20,7 @@ ZONE_PROPERTIES = { "width":ZONE_WIDTH, "height":ZONE_HEIGHT, "r_min":ROOM_MIN_S
 # Game Settings
 FOV_ALGO = libtcod.FOV_BASIC
 FOV_LIGHT_WALLS = True
-TORCH_RADIUS = 4
+TORCH_RADIUS = 5
 color_dark_wall = libtcod.Color(0, 0, 100)
 color_light_wall = libtcod.Color(130, 110, 50)
 color_dark_ground = libtcod.Color(50, 50, 150)
@@ -30,5 +31,5 @@ libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | 
 libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE, False)
 
 # Limit FPS for real-time play;
-# Comment out if turn-based play is desired.
-libtcod.sys_set_fps(LIMIT_FPS)
+if TURN_BASED is False:
+  libtcod.sys_set_fps(LIMIT_FPS)

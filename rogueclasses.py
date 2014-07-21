@@ -161,8 +161,10 @@ class MonsterBasic:
   def take_turn(self, state):
     monster = self.owner
     if libtcod.map_is_in_fov(state["fov_map"], monster.x, monster.y):
+      print 'Monster can see player!'
       if monster.distance_to(state["player"]) >= 2:
         # Move toward the player if far away
+        print 'Monster moves toward player'
         monster.move_toward(state, state["player"].x, state["player"].y)
       elif state["player"].fighter.cur_hp > 0:
         # Attack the player if player is adjacent and alive
